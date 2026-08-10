@@ -33,6 +33,7 @@ git remote add origin %REPO_URL%
 
 git add -A --force
 git commit -m "Upload otomatis via Script Faiz"
+git branch -M main
 git push -u origin main --force
 
 echo.
