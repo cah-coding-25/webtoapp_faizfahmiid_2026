@@ -24,8 +24,8 @@ echo [OK] Git Portable Aktif!
 echo.
 
 if not exist ".git" git init
-git config --global user.email "cahsantriit@gmail.com"
-git config --global user.name "cah-coding-25"
+git config --global user.email "masukkan e-mail yang terdaftar pada github"
+git config --global user.name "masukkan username github anda"
 
 set /p REPO_URL="Masukkan URL Github: "
 git remote remove origin >nul 2>&1
