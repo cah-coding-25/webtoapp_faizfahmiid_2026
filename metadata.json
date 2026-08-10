@@ -1,0 +1,6 @@
+{
+  "name": "Web To App",
+  "description": "Aplikasi Converter Website ke APK Android siap pakai dengan fitur WebGL, Upload File, Offline Support, dan Swipe-Refresh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
