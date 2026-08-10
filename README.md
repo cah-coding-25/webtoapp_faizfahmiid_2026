@@ -141,3 +141,50 @@ Anda dapat membuat puluhan APK & AAB untuk berbagai website langsung dari HP / B
 - **Gradle Version**: `9.3.1`
 - **Output Artifacts**: APK (Debug), AAB (Signed Release Bundle), Keystore Backup (`my-upload-key.jks`), Source Code Zip (`web2app-source-code.zip`)
 - **Automated Tagging**: `build-{RUN_NUMBER}-{RUN_ATTEMPT}`
+
+
+# 🚀 Smart Auto Upload to GitHub
+Dokumen ini menjelaskan penggunaan skrip otomatis berbasis Windows Batch (`.bat`) untuk mempermudah proses inisialisasi dan pengunggahan seluruh file proyek Anda menuju repositori GitHub secara instan tanpa terkecuali.
+
+> **Created By:** Faiz_Fahmi_ID
+
+---
+
+## ✨ Fitur Utama
+- 🔍 **Smart Detection:** Otomatis mendeteksi keberadaan Git yang terinstal di sistem laptop atau mencari Git Portable di Flashdisk (`Drive D:` sampai `Z:`).
+- 🔓 **Bypass `.gitignore`:** Memaksa pengunggahan seluruh komponen file proyek tanpa ada yang terlewat.
+- 🔄 **Auto Config & Sync:** Mengatur remote URL secara otomatis tanpa perlu input manual setelah konfigurasi pertama selesai.
+
+---
+
+## 🛠️ Persyaratan Sistem
+Supaya skrip ini berjalan dengan lancar, komputer pendownload wajib memiliki salah satu opsi di bawah ini:
+1. **Git Terinstal** secara resmi pada sistem operasi Windows lokal, **ATAU**
+2. **Git Portable** yang disimpan di dalam Flashdisk dengan nama folder khusus **`GitPortable`** (letakkan folder langsung di akar utama/paling depan flashdisk atau di dalam folder `Aplikasi Portable\GitPortable`).
+
+---
+
+## 📖 Panduan Cara Penggunaan untuk Pendownload
+
+Jika Anda mengunduh file proyek ini dalam bentuk `.zip`, ikuti langkah-langkah berikut agar bisa mengunggah ulang ke repositori GitHub milik Anda sendiri:
+
+### 1. Sesuaikan Identitas Akun Git Anda
+- Klik kanan file **`uploud github.bat`** di folder lokal Anda, lalu pilih **Edit** atau buka menggunakan aplikasi **Notepad**.
+- Temukan baris kode konfigurasi identitas dan ubah teks di dalam tanda kutip sesuai data akun GitHub Anda:
+  ```bat
+  git config --global user.email "email_anda_yang_terdaftar_di_github@gmail.com"
+  git config --global user.name "username_github_anda"
+  ```
+- Simpan perubahan dokumen (**Ctrl + S**) lalu tutup Notepad.
+
+### 2. Atur Ulang Target Repositori Anda
+- Cari file konfigurasi bernama **`repo.txt`** di dalam folder utama proyek ini, lalu **Hapus (Delete)** file tersebut. 
+- *Catatan: Penghapusan ini wajib dilakukan agar skrip tidak mencoba mengirim file ke repositori bawaan milik pembuat aslinya.*
+
+### 3. Jalankan Pengunggahan Otomatis
+- **Klik dua kali** pada file **`uploud github.bat`**.
+- Masukkan URL target repositori GitHub Anda yang baru ketika program memunculkan perintah `Masukkan URL Github:`.
+- Tekan **Enter** dan tunggu hingga proses sinkronisasi serta transfer data selesai 100%.
+
+---
+⭐ Jika alat bantu ini mempermudah pekerjaan Anda, jangan lupa berikan dukungan terbaik Anda!
