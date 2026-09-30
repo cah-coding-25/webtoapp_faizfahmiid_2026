@@ -1,0 +1,196 @@
+name: Build APK and Release AAB
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    env:
+      STORE_PASSWORD: android123
+      KEY_PASSWORD: android123
+      KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Verify Java environment
+        run: |
+          java -version
+          echo "JAVA_HOME: $JAVA_HOME"
+          RAW_VER=$(java -version 2>&1 | head -n 1)
+          JAVA_VER=$(echo "$RAW_VER" | awk -F '"' '{print $2}' | awk -F '.' '{print $1}')
+          echo "Detected Java Major Version: $JAVA_VER"
+
+      - name: Set up Gradle 9.3.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Create temporary debug keystore
+        run: |
+          if [ -f "./debug.keystore" ]; then
+            echo "debug.keystore already exists."
+          else
+            echo "Generating temporary debug.keystore..."
+            keytool -genkey -v \
+              -keystore ./debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000
+          fi
+
+      - name: Create release upload keystore
+        run: |
+          if [ -f "$KEYSTORE_PATH" ]; then
+            echo "Release keystore already exists at $KEYSTORE_PATH"
+          else
+            echo "Generating release upload keystore..."
+            keytool -genkeypair -v \
+              -keystore "$KEYSTORE_PATH" \
+              -storepass "$STORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -alias upload \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=WebToApp, OU=AppBuild, O=AppBuild, L=Jakarta, S=Jakarta, C=ID"
+          fi
+
+      - name: Build Debug APK
+        run: gradle :app:assembleDebug --stacktrace --no-daemon
+
+      - name: Build Signed Release AAB
+        run: gradle :app:bundleRelease --stacktrace --no-daemon
+
+      - name: Verify build outputs
+        run: |
+          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          AAB_PATH="app/build/outputs/bundle/release/app-release.aab"
+          
+          if [ ! -f "$APK_PATH" ]; then
+            echo "Error: APK not found at $APK_PATH"
+            exit 1
+          fi
+          if [ ! -f "$AAB_PATH" ]; then
+            echo "Error: AAB not found at $AAB_PATH"
+            exit 1
+          fi
+          echo "APK & AAB verified successfully!"
+
+      - name: Upload Debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload Release AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: Upload Keystore Backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: save-this-keystore
+          path: my-upload-key.jks
+          if-no-files-found: warn
+
+      - name: Prepare Release Assets
+        id: prepare_assets
+        run: |
+          TEMP_DIR="$RUNNER_TEMP/release_assets"
+          mkdir -p "$TEMP_DIR"
+          
+          REPO_NAME=$(echo "${{ github.event.repository.name }}" | sed 's/[^a-zA-Z0-9._-]/_/g')
+          if [ -z "$REPO_NAME" ]; then
+            REPO_NAME="web2app"
+          fi
+          
+          APK_ASSET_NAME="${REPO_NAME}-debug-build-${{ github.run_number }}.apk"
+          AAB_ASSET_NAME="${REPO_NAME}-release-build-${{ github.run_number }}.aab"
+          SOURCE_ZIP_NAME="${REPO_NAME}-source-code.zip"
+          
+          cp app/build/outputs/apk/debug/app-debug.apk "$TEMP_DIR/$APK_ASSET_NAME"
+          cp app/build/outputs/bundle/release/app-release.aab "$TEMP_DIR/$AAB_ASSET_NAME"
+          cp my-upload-key.jks "$TEMP_DIR/my-upload-key.jks"
+          
+          # Compress source code into a standalone zip file
+          zip -r "$TEMP_DIR/$SOURCE_ZIP_NAME" . -x "*.git*" "app/build/*" ".gradle/*" "my-upload-key.jks" "debug.keystore"
+          
+          echo "temp_dir=$TEMP_DIR" >> $GITHUB_OUTPUT
+          echo "apk_name=$APK_ASSET_NAME" >> $GITHUB_OUTPUT
+          echo "aab_name=$AAB_ASSET_NAME" >> $GITHUB_OUTPUT
+          echo "source_zip=$SOURCE_ZIP_NAME" >> $GITHUB_OUTPUT
+
+      - name: Publish to GitHub Releases
+        id: create_release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TEMP_DIR="${{ steps.prepare_assets.outputs.temp_dir }}"
+          APK_ASSET="$TEMP_DIR/${{ steps.prepare_assets.outputs.apk_name }}"
+          AAB_ASSET="$TEMP_DIR/${{ steps.prepare_assets.outputs.aab_name }}"
+          KEYSTORE_ASSET="$TEMP_DIR/my-upload-key.jks"
+          SOURCE_ASSET="$TEMP_DIR/${{ steps.prepare_assets.outputs.source_zip }}"
+          
+          RELEASE_TAG="build-${{ github.run_number }}-${{ github.run_attempt }}"
+          RELEASE_TITLE="App Build #${{ github.run_number }} (APK, AAB & Source Code)"
+          
+          gh release create "$RELEASE_TAG" \
+            "$APK_ASSET" \
+            "$AAB_ASSET" \
+            "$KEYSTORE_ASSET" \
+            "$SOURCE_ASSET" \
+            --title "$RELEASE_TITLE" \
+            --target "${{ github.sha }}" \
+            --notes "### 🚀 Automated Android Build Output
+          
+          - 📱 **APK File (Untuk HP)**: Langsung install di HP Android untuk testing.
+          - 🛒 **AAB File (Untuk Play Store)**: Upload ke Google Play Console.
+          - 🔑 **Keystore File (Kunci Keamanan)**: Simpan file \`my-upload-key.jks\` ini untuk update aplikasi di Play Store di masa mendatang!
+          - 📁 **Source Code Archive**: Berisi source code project lengkap yang siap di-edit kembali.
+          
+          **Detail Build:**
+          - Run Number: \`${{ github.run_number }}\`
+          - Commit SHA: \`${{ github.sha }}\`" \
+            --latest
+
+      - name: Report Build Summary
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_TAG="build-${{ github.run_number }}-${{ github.run_attempt }}"
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${RELEASE_TAG}"
+          
+          echo "### 📦 Hasil Build Android (APK, AAB & Source Code) Selesai!" >> $GITHUB_STEP_SUMMARY
+          echo "Direct Releases Link: [$RELEASE_URL]($RELEASE_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "File yang dihasilkan:" >> $GITHUB_STEP_SUMMARY
+          echo "1. 📱 **APK (HP Installer)**: \`${{ steps.prepare_assets.outputs.apk_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "2. 🛒 **AAB (Play Store)**: \`${{ steps.prepare_assets.outputs.aab_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. 🔑 **Keystore**: \`my-upload-key.jks\` (Kunci Rilis)" >> $GITHUB_STEP_SUMMARY
+          echo "4. 📦 **Source Code ZIP**: \`${{ steps.prepare_assets.outputs.source_zip }}\` (serta format bawaan \`Source code.zip\` & \`Source code.tar.gz\` dari GitHub)" >> $GITHUB_STEP_SUMMARY
