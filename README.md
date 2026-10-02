@@ -128,7 +128,70 @@ Anda dapat membuat puluhan APK & AAB untuk berbagai website langsung dari HP / B
      - 📦 `[nama-repo]-source-code.zip` & Format Bawaan GitHub (`Source code.zip` & `Source code.tar.gz`) : Source code project komplit.
 
 ---
+# 🧠 Panduan Lengkap Pengaturan Application ID (Package Name) Android
 
+Dokumen ini berisi panduan komprehensif mengenai fungsi, aturan penulisan, serta efek perubahan **Application ID** (`applicationId`) pada baris ke-17 di file `app/build.gradle.kts`.
+
+---
+
+## 📋 1. Apa itu `applicationId`?
+
+`applicationId` (sering disebut *Package Name*) adalah **KTP atau Identitas Unik Resmi** sebuah aplikasi di dalam sistem operasi Android. 
+
+Sistem Android tidak membedakan aplikasi berdasarkan nama tampilannya (misalnya: "Web To App"), melainkan berdasarkan kode `applicationId` ini. Dua aplikasi berbeda di dunia tidak boleh memiliki ID yang sama jika ingin berjalan di satu perangkat yang sama.
+
+---
+
+## 🛠️ 2. Aturan Wajib Mengubah Nama `applicationId`
+
+Meskipun Anda **bebas mengganti namanya sesuka hati** agar bisa membuat banyak aplikasi baru, Anda harus mematuhi aturan penulisan dari Google Android berikut ini. Jika dilanggar, proses *build* APK di GitHub Actions akan **Gagal / Error**:
+
+1. **Wajib Menggunakan Huruf Kecil Semuanya (`a-z`):**
+   * Tidak boleh ada satu pun huruf kapital/besar di dalam kode.
+   * *Benar:* `"com.faiz.appdua"`
+   * *Salah:* `"com.Faiz.AppDua"`
+2. **Harus Menggunakan Struktur Titik (`.`):**
+   * Nama identitas minimal harus terdiri dari dua atau tiga kata yang dipisahkan oleh tanda titik (seperti format domain internet terbalik).
+   * *Benar:* `"com.cahcoding.myapp"`
+   * *Salah:* `"com-cahcoding-myapp"` atau `"cahcodingmyapp"`
+3. **Karakter Pertama Setelah Titik Harus Huruf:**
+   * Angka (`0-9`) boleh digunakan, tetapi tidak boleh ditaruh langsung setelah tanda titik atau di awal kata.
+   * *Benar:* `"com.app2.versi"` atau `"com.faiz.appv2"`
+   * *Salah:* `"com.2app.versi"`
+4. **Dilarang Menggunakan Simbol Khusus dan Spasi:**
+   * Jangan gunakan spasi, tanda hubung (`-`), garis bawah (`_`), atau simbol seperti `@`, `#`, `$`, dan lainnya.
+5. **Wajib Diapit Tanda Kutip Dua (`""`):**
+   * Jangan sampai menghapus tanda petik dua di awal dan di akhir nama identitas tersebut.
+
+### 💡 Contoh Penggantian yang Aman:
+* *Bawaan awal:* `applicationId = "com.aistudio.web2app.app"`
+* *Alternatif 1:* `applicationId = "com.aistudio.web2app.kedua"`
+* *Alternatif 2:* `applicationId = "com.faiz.aplikasibaru"`
+
+---
+
+## ⚙️ 3. Fungsi Utama `applicationId`
+
+* **Pembeda Aplikasi di HP:** Menghindari bentrok sistem. Jika ID berbeda, Android akan mendeteksinya sebagai aplikasi yang berbeda dan mengizinkannya terinstal bersamaan.
+* **Alamat Folder Penyimpanan:** Android memakai ID ini untuk membuat folder penyimpanan internal terisolasi khusus untuk aplikasi tersebut di dalam HP (`data/data/nama.application.id/`).
+* **Identitas Resmi Play Store:** Jika nanti aplikasi diunggah ke Google Play Store, link URL aplikasi Anda akan menggunakan nama ini (Contoh: `https://google.com`).
+
+---
+
+## 📊 4. Efek yang Terjadi Jika `applicationId` Diganti
+
+Ketika Anda mengubah kode di baris 17 menjadi nama baru, berikut dampak langsung yang akan Anda rasakan:
+
+### ✅ Efek Positif (Tujuan Utama)
+* **Bisa Diinstal Bersamaan:** Anda bisa langsung menginstal APK hasil *build* terbaru tanpa perlu menghapus APK pertama yang sudah terpasang di HP Anda.
+* **Manajemen Ikon Mandiri:** Di layar HP Anda akan muncul dua ikon aplikasi baru yang terpisah dan bisa dibuka secara bersamaan tanpa saling mengganggu.
+
+### ⚠️ Efek Samping yang Perlu Diketahui
+* **Data Tidak Berbagi (Terisolasi):** Karena folder sistemnya dibuat baru, aplikasi kedua tidak akan bisa membaca riwayat *login*, *cache*, atau data dari aplikasi pertama.
+* **Push Notification Firebase Terputus:** Jika *source code* Anda menggunakan layanan Firebase Cloud Messaging (Notifikasi otomatis), fitur notifikasi tidak akan masuk ke APK kedua ini. Anda harus mendaftarkan ulang `applicationId` yang baru tersebut ke dalam *dashboard* Firebase Anda jika ingin notifikasinya kembali aktif.
+
+
+---
 ## 📑 Ringkasan Spesifikasi Build GitHub Actions
 
 - **Java Version**: Temurin JDK 17
