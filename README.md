@@ -190,6 +190,49 @@ Ketika Anda mengubah kode di baris 17 menjadi nama baru, berikut dampak langsung
 * **Data Tidak Berbagi (Terisolasi):** Karena folder sistemnya dibuat baru, aplikasi kedua tidak akan bisa membaca riwayat *login*, *cache*, atau data dari aplikasi pertama.
 * **Push Notification Firebase Terputus:** Jika *source code* Anda menggunakan layanan Firebase Cloud Messaging (Notifikasi otomatis), fitur notifikasi tidak akan masuk ke APK kedua ini. Anda harus mendaftarkan ulang `applicationId` yang baru tersebut ke dalam *dashboard* Firebase Anda jika ingin notifikasinya kembali aktif.
 
+---
+# 🔄 Panduan Lengkap Pengaturan Versi Aplikasi (Version Management) Android
+
+Dokumen ini berisi panduan komprehensif mengenai fungsi, aturan penulisan, serta mekanisme pembaruan (*update*) menggunakan **Version Code** (`versionCode`) dan **Version Name** (`versionName`) pada baris ke-19 dan 20 di file `app/build.gradle.kts`.
+
+---
+
+## 📋 1. Perbedaan `versionCode` dan `versionName`
+
+Di dalam sistem Android, sebuah aplikasi memiliki dua jenis identitas versi yang berbeda fungsi:
+
+### A. `versionCode` (Identitas Versi untuk Sistem Android)
+* **Fungsi:** Sebagai acuan mutlak bagi sistem HP Android untuk menentukan apakah sebuah file APK merupakan versi baru (pembaruan) atau versi lama.
+* **Aturan Penulisan:** **Wajib berupa angka bulat positif** (1, 2, 3, 4, dst.) dan nilainya harus selalu naik (lebih besar) setiap kali Anda merilis pembaruan. Tidak boleh menggunakan angka desimal/koma.
+* *Contoh bawaan:* `versionCode = 1`
+
+### B. `versionName` (Identitas Versi untuk Pengguna/Manusia)
+* **Fungsi:** Sebagai teks informasi versi yang bisa dilihat oleh pengguna di menu pengaturan HP atau toko aplikasi (Play Store).
+* **Aturan Penulisan:** Berupa teks bebas yang diapit tanda kutip dua (`""`), biasanya menggunakan format desimal untuk menandai skala perubahan aplikasi.
+* *Contoh bawaan:* `versionName = "1.0"`
+
+---
+
+## ⚠️ 2. Aturan Penting Saat Melakukan Update (Pembaruan) Aplikasi
+
+Karena Anda menginstal APK ini secara mandiri (bukan dari Google Play Store), proses pembaruan **tidak akan terjadi secara otomatis** di HP pengguna. Anda harus mengikuti aturan berikut agar proses instalasi manual berjalan lancar:
+
+### 1. Wajib Menaikkan Angka `versionCode`
+Jika Anda melakukan perubahan pada website atau kode aplikasi di GitHub, Anda **wajib** mengubah nilai `versionCode` menjadi lebih tinggi dari versi yang saat ini terinstal di HP.
+* Jika versi di HP memiliki `versionCode = 1`, maka di GitHub harus diubah menjadi `versionCode = 2`.
+* **Dampak jika lupa dinaikkan:** HP Android akan memblokir instalasi APK baru tersebut dengan memunculkan pesan *error* "Aplikasi tidak terinstal" karena sistem menganggap file tersebut sama persis dengan yang sudah terpasang.
+
+### 2. Menyesuaikan Teks `versionName`
+Ubah teks ini agar Anda tidak bingung membedakan riwayat perilisan aplikasi Anda.
+* Perubahan kecil (perbaikan teks/bug web): `"1.0"` menjadi `"1.1"` atau `"1.2"`
+* Perubahan besar (ganti link website/desain total): `"1.0"` menjadi `"2.0"`
+
+---
+
+## 🚀 3. Alur Kerja (Workflow) Melakukan Update Aplikasi secara Manual
+
+Untuk memperbarui aplikasi yang sudah terlanjur terinstal di HP Anda tanpa menghilangkan data lama, ikuti langkah demi langkah ini:
+
 
 ---
 ## 📑 Ringkasan Spesifikasi Build GitHub Actions
